@@ -9,20 +9,25 @@
 #define BAUD 9600
 #define MYUBRR F_CPU/16/BAUD-1
 #include <avr/io.h>
-#include <util/delay.h>
-#include <avr/interrupt.h>
-#include "nokia5110.h"
+#include <util/delay.h> // Incluir Delay
+#include <avr/interrupt.h> // Incluir Interrupções
+#include "nokia5110.h" // Biblioteca do display nokia
+#include <avr/eeprom.h> // Incluir EEPROM
 
+// Definição de Variáveis utilizadas em várias partes do código
 float dutyCycle;
-char Status = ' ', Velocidade = ' ';
+char Status = ' ', Velocidade = ' ', recebido;
+int cont;
 
+
+// Menu apresentado no display
 void Menu()
 {
 	nokia_lcd_clear();
 	nokia_lcd_set_cursor(0,0);
 	nokia_lcd_write_string("MedCar",2);
 	nokia_lcd_set_cursor(0,20);
-	nokia_lcd_write_string("Motor: ",1);
+	nokia_lcd_write_string("Local: ",1);
 	nokia_lcd_write_char(Velocidade,1);
 	nokia_lcd_set_cursor(0,30);
 	nokia_lcd_write_string("Modo: ",1);
@@ -33,26 +38,27 @@ void Menu()
 	nokia_lcd_write_string("OFF ",1);
 	nokia_lcd_render();
 	
-	
 }
-ISR(INT0_vect) // Sensor
-{
 
+ISR(INT0_vect) // Sensor ultrassônico
+{
 	Menu();
 	nokia_lcd_set_cursor(50,40);
 	nokia_lcd_write_string("ON ",1);
 	nokia_lcd_render();
 	_delay_ms(3000);
 	
+	PORTC = 0b00000100;
+	
 }
 
 ISR(USART_RX_vect)
 {
 	char recebido;
+	
 	recebido = UDR0;
 
-	
-	// Modo do MedCar
+	// Modo do MedCar (Ativado ou Desativado)
 	if(recebido=='l')
 	{
 		PORTC = 0b00000001; // Ativado
@@ -68,11 +74,11 @@ ISR(USART_RX_vect)
 		PORTD = 0x00;
 	}
 
+	// Local que o MedCar foi solicitado
 	
-	//Motor
-	if (recebido == '1' )// Local 1 á frente
+	if (recebido == '1' )// Local 1
 	{
-//		dutyCycle = 25;
+//		dutyCycle = 100;
 		Velocidade = '1';
 		
 		PORTD = 0b00001100;
@@ -86,7 +92,7 @@ ISR(USART_RX_vect)
 
 	}
 	
-	if (recebido == '2' )// Local 2 á frente
+	if (recebido == '2' )// Local 2
 	{
 //		dutyCycle = 50;
 		Velocidade = '2';
@@ -110,9 +116,9 @@ ISR(USART_RX_vect)
 		
 	}
 	
-	if (recebido == '3' )// Local 3 á frente
+	if (recebido == '3' )// Local 3
 	{
-//		dutyCycle = 75;
+//		dutyCycle = 50;
 		Velocidade = '3';
 		
 		PORTD = 0b00001100;
@@ -142,7 +148,7 @@ ISR(USART_RX_vect)
 		
 	}
 	
-	if (recebido == '4' )// Voltar
+	if (recebido == '4' )// Retorne
 	{
 //		dutyCycle = 100;
 		Velocidade = '4';
@@ -174,7 +180,7 @@ void USART_Init(unsigned int ubrr)
 // Função para envio de um frame de 5 a 8bits
 void USART_Transmit(unsigned char data)
 {
-	while(!( UCSR0A & (1<<UDRE0)));//Espera a limpeza do registr. de transmissão
+	while(!( UCSR0A & (1<<UDRE0)));//Espera a limpeza do registrador de transmissão
 	UDR0 = data; //Coloca o dado no registrador e o envia
 }
 
@@ -189,12 +195,12 @@ void main(void)
 	//GPIO
 	DDRC = 0xFF; //Define a porta C como saída
 	DDRB  = 0xFF; //Define a porta B como saída
-	DDRD =	0b01111000; //PD6 saída
-	PORTD = 0b00000100; //Todos os pull-ups da porta D habilitados
+	DDRD =	0b01111000; //PD saídas
+	PORTD = 0b00000100; //Habilitação do pull-up
 
 	//Configuração das interrupções
-	EICRA = 0b00001010;//interrupção externa INT0 e INT1 na borda de descida
-	EIMSK = 0b00000011;//habilita a interrupção externa INT0 e INT1	
+	EICRA = 0b00000010;//interrupção externa INT0 na borda de descida
+	EIMSK = 0b00000001;//habilita a interrupção externa INT0
 
 	TCCR0A = 0b10000011; //PWM não invertido nos pinos OC0A 
 	TCCR0B = 0b00000101; //frequencia em 61Hz
@@ -204,11 +210,43 @@ void main(void)
 	USART_Init(MYUBRR);
 	nokia_lcd_init(); //Inicia o LCD
 	
+	//EEPROM
+	char R_array[15],W_array[15] = "DADOS";
+	
+	eeprom_write_block(W_array,0,strlen(W_array)); // Escrever no endereço 0 do EEPROM
+	eeprom_read_block(R_array,0,strlen(W_array)); // Ler conteúdo no endereço 0 do EEPROM
+	
 	while(1)
 	{
 	
-	Menu();	
-	OCR0A = (dutyCycle*255)/100.0;
+		Menu();	
+		OCR0A = (dutyCycle*255)/100.0;
+	
+		// Registro de dados de solicitação no EEPROM
+		if(recebido = '1')
+		{
+			cont ++;
+			_delay_ms(50);
+			eeprom_write_block(W_array,0,strlen(W_array));
+		}
+		if(recebido = '2')
+		{
+			cont ++;;
+			_delay_ms(50);
+			eeprom_write_block(W_array,0,strlen(W_array));
+		}
+		if(recebido = '3')
+		{
+			cont ++;
+			_delay_ms(50);
+			eeprom_write_block(W_array,0,strlen(W_array));
+		}
+		if(recebido = '4')
+		{
+			cont ++;
+			_delay_ms(50);
+			eeprom_write_block(W_array,0,strlen(W_array));
+		}
 	
 	}
 }
