@@ -14,16 +14,19 @@
 #include "nokia5110.h" // Biblioteca do display nokia
 #include <avr/eeprom.h> // Incluir EEPROM
 
-// Definição de Variáveis utilizadas em várias partes do código
+// Variáveis Globais
+#define MIN 0.5
+#define MAX 99.9
+
 float dutyCycle;
-char Status = ' ', Velocidade = ' ', recebido;
+char Status = ' ', Velocidade = ' ',Brilho = ' ', recebido;
 int cont;
 
 
 // Menu apresentado no display
 void Menu()
 {
-	nokia_lcd_clear();
+	nokia_lcd_clear(); // Limpar o display
 	nokia_lcd_set_cursor(0,0);
 	nokia_lcd_write_string("MedCar",2);
 	nokia_lcd_set_cursor(0,20);
@@ -36,7 +39,7 @@ void Menu()
 	nokia_lcd_write_string("Sensor: ",1);
 	nokia_lcd_set_cursor(50,40);
 	nokia_lcd_write_string("OFF ",1);
-	nokia_lcd_render();
+	nokia_lcd_render(); // Atualiza o display
 	
 }
 
@@ -46,18 +49,15 @@ ISR(INT0_vect) // Sensor ultrassônico
 	nokia_lcd_set_cursor(50,40);
 	nokia_lcd_write_string("ON ",1);
 	nokia_lcd_render();
-	_delay_ms(3000);
+	_delay_ms(5000);
 	
-	PORTC = 0b00000100;
-	
+	PORTD = 0b00000100;	// Interrompe os motor no tempo do delay
 }
 
 ISR(USART_RX_vect)
 {
-	char recebido;
-	
 	recebido = UDR0;
-
+	
 	// Modo do MedCar (Ativado ou Desativado)
 	if(recebido=='l')
 	{
@@ -65,20 +65,20 @@ ISR(USART_RX_vect)
 		Status = 'L';
 		
 		PORTD = 0xFF;
+		
 	}
 	if(recebido=='d')
 	{
 		PORTC = 0b00000000;	// Desativado
-		Status = 'D';	
+		Status = 'D';
 		
 		PORTD = 0x00;
 	}
-
+	
 	// Local que o MedCar foi solicitado
 	
 	if (recebido == '1' )// Local 1
 	{
-//		dutyCycle = 100;
 		Velocidade = '1';
 		
 		PORTD = 0b00001100;
@@ -87,14 +87,14 @@ ISR(USART_RX_vect)
 		_delay_ms(50);
 		PORTD = 0b00100100;
 		_delay_ms(50);
-		PORTD = 0b01000100;
+		PORTD = 0b10000100;
 		_delay_ms(50);
 
 	}
 	
 	if (recebido == '2' )// Local 2
 	{
-//		dutyCycle = 50;
+
 		Velocidade = '2';
 		
 		PORTD = 0b00001100;
@@ -103,7 +103,7 @@ ISR(USART_RX_vect)
 		_delay_ms(50);
 		PORTD = 0b00100100;
 		_delay_ms(50);
-		PORTD = 0b01000100;
+		PORTD = 0b10000100;
 		_delay_ms(50);
 		PORTD = 0b00001100;
 		_delay_ms(50);
@@ -111,14 +111,14 @@ ISR(USART_RX_vect)
 		_delay_ms(50);
 		PORTD = 0b00100100;
 		_delay_ms(50);
-		PORTD = 0b01000100;
+		PORTD = 0b10000100;
 		_delay_ms(50);
 		
 	}
 	
 	if (recebido == '3' )// Local 3
 	{
-//		dutyCycle = 50;
+
 		Velocidade = '3';
 		
 		PORTD = 0b00001100;
@@ -127,7 +127,7 @@ ISR(USART_RX_vect)
 		_delay_ms(50);
 		PORTD = 0b00100100;
 		_delay_ms(50);
-		PORTD = 0b01000100;
+		PORTD = 0b10000100;
 		_delay_ms(50);
 		PORTD = 0b00001100;
 		_delay_ms(50);
@@ -135,7 +135,7 @@ ISR(USART_RX_vect)
 		_delay_ms(50);
 		PORTD = 0b00100100;
 		_delay_ms(50);
-		PORTD = 0b01000100;
+		PORTD = 0b10000100;
 		_delay_ms(50);
 		PORTD = 0b00001100;
 		_delay_ms(50);
@@ -143,14 +143,14 @@ ISR(USART_RX_vect)
 		_delay_ms(50);
 		PORTD = 0b00100100;
 		_delay_ms(50);
-		PORTD = 0b01000100;
+		PORTD = 0b10000100;
 		_delay_ms(50);
 		
 	}
 	
 	if (recebido == '4' )// Retorne
 	{
-//		dutyCycle = 100;
+
 		Velocidade = '4';
 		
 		PORTD = 0b00100100;
@@ -162,6 +162,26 @@ ISR(USART_RX_vect)
 		PORTD = 0b00000100;
 		_delay_ms(50);
 		
+	}
+	
+	// Iluminação Corredores
+	
+	if (recebido == 'm' )
+	{
+		dutyCycle = MIN;
+		Brilho = '0';
+	}
+	
+	if (recebido == 't' )
+	{
+		dutyCycle = 50;
+		Brilho = '1';
+	}
+	
+	if (recebido == 'n' )
+	{
+		dutyCycle = MAX;
+		Brilho = '2';
 	}
 	
 	USART_Transmit(recebido);
@@ -193,19 +213,19 @@ unsigned char USART_Receive(void)
 void main(void)
 {
 	//GPIO
-	DDRC = 0xFF; //Define a porta C como saída
 	DDRB  = 0xFF; //Define a porta B como saída
-	DDRD =	0b01111000; //PD saídas
+	DDRC  = 0xFF;
+	DDRD =	0b11111000; //PD saídas
 	PORTD = 0b00000100; //Habilitação do pull-up
 
 	//Configuração das interrupções
 	EICRA = 0b00000010;//interrupção externa INT0 na borda de descida
 	EIMSK = 0b00000001;//habilita a interrupção externa INT0
 
-	TCCR0A = 0b10000011; //PWM não invertido nos pinos OC0A 
+	TCCR0A = 0b10000011; //PWM não invertido nos pinos OC0A
 	TCCR0B = 0b00000101; //frequencia em 61Hz
 	OCR0A = 0; //controle do ciclo ativo do PWM
-	sei();
+	
 	
 	USART_Init(MYUBRR);
 	nokia_lcd_init(); //Inicia o LCD
@@ -214,7 +234,8 @@ void main(void)
 	char R_array[15],W_array[15] = "DADOS";
 	
 	eeprom_write_block(W_array,0,strlen(W_array)); // Escrever no endereço 0 do EEPROM
-	eeprom_read_block(R_array,0,strlen(W_array)); // Ler conteúdo no endereço 0 do EEPROM
+
+	sei();
 	
 	while(1)
 	{
