@@ -14,13 +14,8 @@
 #include "nokia5110.h" // Biblioteca do display nokia
 #include <avr/eeprom.h> // Incluir EEPROM
 
-<<<<<<< HEAD
-// Vari·veis Globais
-#define MIN 10
-=======
 // Vari√°veis Globais
-#define MIN 0.5
->>>>>>> 6121d803d0598de089a269980508221010f646b6
+#define MIN 10
 #define MAX 99.9
 #define tam_vetor 4
 
@@ -28,7 +23,7 @@ float dutyCycle;
 char Status = ' ', Velocidade = ' ',Brilho = ' ', recebido;
 int cont;
 
-// ConfiguraÁ„o ADC 
+// Configura√ß√£o ADC 
 
 #define tam_vetor 4
 unsigned char leitura_ADC_string[tam_vetor];
@@ -62,11 +57,7 @@ ISR(INT0_vect) // Sensor ultrass√¥nico
 	nokia_lcd_render();
 	_delay_ms(5000);
 	
-<<<<<<< HEAD
 	PORTD = 0b01000100;	// Interrompe os motor no tempo do delay
-=======
-	PORTD = 0b00000100;	// Interrompe os motores no tempo do delay
->>>>>>> 6121d803d0598de089a269980508221010f646b6
 }
 
 ISR(USART_RX_vect)
@@ -230,30 +221,17 @@ void main(void)
 {
 	
 	//GPIO
-<<<<<<< HEAD
-	DDRB  = 0xFF; //Define a porta B como saÌda
-	DDRC =  0b11011111; // pc5 Entrada
-	DDRD =	0b11111010; //PD saÌdas
-	PORTD = 0b00000100; //HabilitaÁ„o do pull-up
-
-	//ConfiguraÁ„o das interrupÁıes
-	EICRA = 0b00000010;//interrupÁ„o externa INT0 na borda de descida
-	EIMSK = 0b00000001;//habilita a interrupÁ„o externa INT0
-	
-	// PWM
-	TCCR0A = 0b10000011; //PWM n„o invertido nos pinos OC0A
-=======
 	DDRB  = 0xFF; //Define a porta B como sa√≠da
-	DDRC  = 0xFF;
-	DDRD =	0b11111000; //PD sa√≠das
+	DDRC =  0b11011111; // pc5 Entrada
+	DDRD =	0b11111010; //PD sa√≠das
 	PORTD = 0b00000100; //Habilita√ß√£o do pull-up
 
 	//Configura√ß√£o das interrup√ß√µes
 	EICRA = 0b00000010;//interrup√ß√£o externa INT0 na borda de descida
 	EIMSK = 0b00000001;//habilita a interrup√ß√£o externa INT0
-
+	
+	// PWM
 	TCCR0A = 0b10000011; //PWM n√£o invertido nos pinos OC0A
->>>>>>> 6121d803d0598de089a269980508221010f646b6
 	TCCR0B = 0b00000101; //frequencia em 61Hz
 	
 	TCCR2A = 0b10100011;
@@ -273,12 +251,7 @@ void main(void)
 	
 	//EEPROM
 	char R_array[15],W_array[15] = "DADOS";
-<<<<<<< HEAD
-	eeprom_write_block(W_array,0,strlen(W_array)); // Escrever no endereÁo 0 do EEPROM
-=======
-	
 	eeprom_write_block(W_array,0,strlen(W_array)); // Escrever no endere√ßo 0 do EEPROM
->>>>>>> 6121d803d0598de089a269980508221010f646b6
 
 	sei();
 	
@@ -323,7 +296,7 @@ ISR(ADC_vect)
 	leitura_ADC = ADC;
 }
 
-//CONVERS√O INTEIRO PARA STRING
+//CONVERS√ÉO INTEIRO PARA STRING
 void int2string(unsigned int valor, unsigned char *disp)
 {
 	for(uint8_t n = 0; n < tam_vetor; n++)
@@ -335,7 +308,7 @@ void int2string(unsigned int valor, unsigned char *disp)
 	do
 	{
 		*disp = (valor%10) + 48;
-		//pega o resto da divis„o por 10
+		//pega o resto da divis√£o por 10
 		valor /= 10; //pega o inteiro da div por 10
 		
 		disp--;
