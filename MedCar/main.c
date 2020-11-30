@@ -15,13 +15,19 @@
 #include <avr/eeprom.h> // Incluir EEPROM
 
 // Variáveis Globais
-#define MIN 0.5
+#define MIN 10
 #define MAX 99.9
+#define tam_vetor 4
 
 float dutyCycle;
 char Status = ' ', Velocidade = ' ',Brilho = ' ', recebido;
 int cont;
 
+// Configuração ADC 
+
+#define tam_vetor 4
+unsigned char leitura_ADC_string[tam_vetor];
+uint16_t leitura_ADC = 0;
 
 // Menu apresentado no display
 void Menu()
@@ -51,7 +57,7 @@ ISR(INT0_vect) // Sensor ultrassônico
 	nokia_lcd_render();
 	_delay_ms(5000);
 	
-	PORTD = 0b00000100;	// Interrompe os motor no tempo do delay
+	PORTD = 0b01000100;	// Interrompe os motor no tempo do delay
 }
 
 ISR(USART_RX_vect)
@@ -64,8 +70,7 @@ ISR(USART_RX_vect)
 		PORTC = 0b00000001; // Ativado
 		Status = 'L';
 		
-		PORTD = 0xFF;
-		
+		PORTD = 0xFF;	
 	}
 	if(recebido=='d')
 	{
@@ -81,7 +86,7 @@ ISR(USART_RX_vect)
 	{
 		Velocidade = '1';
 		
-		PORTD = 0b00001100;
+		PORTD = 0b00000101;
 		_delay_ms(50);
 		PORTD = 0b00010100;
 		_delay_ms(50);
@@ -97,7 +102,7 @@ ISR(USART_RX_vect)
 
 		Velocidade = '2';
 		
-		PORTD = 0b00001100;
+		PORTD = 0b00000101;
 		_delay_ms(50);
 		PORTD = 0b00010100;
 		_delay_ms(50);
@@ -105,7 +110,7 @@ ISR(USART_RX_vect)
 		_delay_ms(50);
 		PORTD = 0b10000100;
 		_delay_ms(50);
-		PORTD = 0b00001100;
+		PORTD = 0b00000101;
 		_delay_ms(50);
 		PORTD = 0b00010100;
 		_delay_ms(50);
@@ -121,7 +126,7 @@ ISR(USART_RX_vect)
 
 		Velocidade = '3';
 		
-		PORTD = 0b00001100;
+		PORTD = 0b00000101;
 		_delay_ms(50);
 		PORTD = 0b00010100;
 		_delay_ms(50);
@@ -129,7 +134,7 @@ ISR(USART_RX_vect)
 		_delay_ms(50);
 		PORTD = 0b10000100;
 		_delay_ms(50);
-		PORTD = 0b00001100;
+		PORTD = 0b00000101;
 		_delay_ms(50);
 		PORTD = 0b00010100;
 		_delay_ms(50);
@@ -137,7 +142,7 @@ ISR(USART_RX_vect)
 		_delay_ms(50);
 		PORTD = 0b10000100;
 		_delay_ms(50);
-		PORTD = 0b00001100;
+		PORTD = 0b00000101;
 		_delay_ms(50);
 		PORTD = 0b00010100;
 		_delay_ms(50);
@@ -153,11 +158,13 @@ ISR(USART_RX_vect)
 
 		Velocidade = '4';
 		
+		PORTD = 0b10000100;
+		_delay_ms(50);
 		PORTD = 0b00100100;
 		_delay_ms(50);
 		PORTD = 0b00010100;
 		_delay_ms(50);
-		PORTD = 0b00001100;
+		PORTD = 0b00000101;
 		_delay_ms(50);
 		PORTD = 0b00000100;
 		_delay_ms(50);
@@ -212,27 +219,38 @@ unsigned char USART_Receive(void)
 }
 void main(void)
 {
+	
 	//GPIO
 	DDRB  = 0xFF; //Define a porta B como saída
-	DDRC  = 0xFF;
-	DDRD =	0b11111000; //PD saídas
+	DDRC =  0b11011111; // pc5 Entrada
+	DDRD =	0b11111010; //PD saídas
 	PORTD = 0b00000100; //Habilitação do pull-up
 
 	//Configuração das interrupções
 	EICRA = 0b00000010;//interrupção externa INT0 na borda de descida
 	EIMSK = 0b00000001;//habilita a interrupção externa INT0
-
+	
+	// PWM
 	TCCR0A = 0b10000011; //PWM não invertido nos pinos OC0A
 	TCCR0B = 0b00000101; //frequencia em 61Hz
-	OCR0A = 0; //controle do ciclo ativo do PWM
 	
+	TCCR2A = 0b10100011;
+	TCCR2B = 0b00000011;
+	
+	OCR0A = 0; //controle do ciclo ativo do PWM
+	OCR2B = 0; //controle do ciclo ativo do PWM
+	
+	//CONFIGURA ADC
+	ADMUX  = 0b00000101; // ADC5
+	ADCSRA = 0b11101111;
+	ADCSRB = 0x00;
+	DIDR0  = 0b00111011;
 	
 	USART_Init(MYUBRR);
 	nokia_lcd_init(); //Inicia o LCD
 	
 	//EEPROM
 	char R_array[15],W_array[15] = "DADOS";
-	
 	eeprom_write_block(W_array,0,strlen(W_array)); // Escrever no endereço 0 do EEPROM
 
 	sei();
@@ -270,4 +288,30 @@ void main(void)
 		}
 	
 	}
+}
+
+ISR(ADC_vect)
+{
+	OCR2B = ADC/4; //PWM
+	leitura_ADC = ADC;
+}
+
+//CONVERSÃO INTEIRO PARA STRING
+void int2string(unsigned int valor, unsigned char *disp)
+{
+	for(uint8_t n = 0; n < tam_vetor; n++)
+	{
+		disp[n]= 0 + 48;
+		//limpa vetor para armazenagem dos digitos
+	}
+	disp += tam_vetor-1;
+	do
+	{
+		*disp = (valor%10) + 48;
+		//pega o resto da divisão por 10
+		valor /= 10; //pega o inteiro da div por 10
+		
+		disp--;
+		
+	}while(valor!=0);
 }
