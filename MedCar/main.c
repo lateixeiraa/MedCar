@@ -1,20 +1,27 @@
-/*
- * MedCar.c
+/*=======================================================
+ *			 Projeto Final - LASD 2020.3
+ *				MedCar.c
  *
  * Created: 23/11/2020 10:22:43
- * Author : Larissa e Marina - PC
- */ 
+ * Author : Larissa Teixeira e Marina Oliveira - PC
+ *
+ */======================================================
 
-#define F_CPU 16000000UL //Frequência de trabalho da CPU
+
+#define F_CPU 16000000UL          //Frequência de trabalho da CPU
 #define BAUD 9600
 #define MYUBRR F_CPU/16/BAUD-1
-#include <avr/io.h>
-#include <util/delay.h> // Incluir Delay
-#include <avr/interrupt.h> // Incluir Interrupções
-#include "nokia5110.h" // Biblioteca do display nokia
-#include <avr/eeprom.h> // Incluir EEPROM
 
-// Variáveis Globais
+//----BIBLIOTECAS----//
+
+#include <avr/io.h>
+#include <util/delay.h>           //Incluir Delay
+#include <avr/interrupt.h>        //Incluir Interrupções
+#include "nokia5110.h"            //Biblioteca do display LCD NOKIA
+#include <avr/eeprom.h>           //Incluir EEPROM
+
+//----Variáveis Globais----//
+
 #define MIN 10
 #define MAX 99.9
 #define tam_vetor 4
@@ -32,9 +39,9 @@ uint16_t leitura_ADC = 0;
 // Menu apresentado no display
 void Menu()
 {
-	nokia_lcd_clear(); // Limpar o display
+	nokia_lcd_clear();                         // Limpar o display
 	nokia_lcd_set_cursor(0,0);
-	nokia_lcd_write_string("MedCar",2);
+	nokia_lcd_write_string("MedCar",2);	       //Escrever no display
 	nokia_lcd_set_cursor(0,20);
 	nokia_lcd_write_string("Local: ",1);
 	nokia_lcd_write_char(Velocidade,1);
@@ -45,27 +52,27 @@ void Menu()
 	nokia_lcd_write_string("Sensor: ",1);
 	nokia_lcd_set_cursor(50,40);
 	nokia_lcd_write_string("OFF ",1);
-	nokia_lcd_render(); // Atualiza o display
+	nokia_lcd_render();                      //Atualizar o display
 	
 }
 
-ISR(INT0_vect) // Sensor ultrassônico
+ISR(INT0_vect) //Sensor ultrassônico - Botão
 {
 	Menu();
 	nokia_lcd_set_cursor(50,40);
 	nokia_lcd_write_string("ON ",1);
 	nokia_lcd_render();
-	_delay_ms(5000);
+	_delay_ms(5000); 
 	
-	PORTD = 0b01000100;	// Interrompe os motor no tempo do delay
+	PORTD = 0b01000100;         	//Interrompe os motores no tempo definido no delay
 }
 
-ISR(USART_RX_vect)
+ISR(USART_RX_vect) //Comandos via monitor serial
 {
 	recebido = UDR0;
 	
 	// Modo do MedCar (Ativado ou Desativado)
-	if(recebido=='l')
+	if(recebido=='l') 
 	{
 		PORTC = 0b00000001; // Ativado
 		Status = 'L';
@@ -173,19 +180,19 @@ ISR(USART_RX_vect)
 	
 	// Iluminação Corredores
 	
-	if (recebido == 'm' )
+	if (recebido == 'm' ) // PERIODO DA MANHÃ
 	{
 		dutyCycle = MIN;
 		Brilho = '0';
 	}
 	
-	if (recebido == 't' )
+	if (recebido == 't' ) //PERIODO DA TARDE
 	{
 		dutyCycle = 50;
 		Brilho = '1';
 	}
 	
-	if (recebido == 'n' )
+	if (recebido == 'n' ) //PERIODO DA NOITE
 	{
 		dutyCycle = MAX;
 		Brilho = '2';
@@ -227,6 +234,8 @@ void main(void)
 	PORTD = 0b00000100; //Habilitação do pull-up
 
 	//Configuração das interrupções
+	
+	//INT0
 	EICRA = 0b00000010;//interrupção externa INT0 na borda de descida
 	EIMSK = 0b00000001;//habilita a interrupção externa INT0
 	
@@ -240,7 +249,7 @@ void main(void)
 	OCR0A = 0; //controle do ciclo ativo do PWM
 	OCR2B = 0; //controle do ciclo ativo do PWM
 	
-	//CONFIGURA ADC
+	//ADC
 	ADMUX  = 0b00000101; // ADC5
 	ADCSRA = 0b11101111;
 	ADCSRB = 0x00;
@@ -249,17 +258,17 @@ void main(void)
 	USART_Init(MYUBRR);
 	nokia_lcd_init(); //Inicia o LCD
 	
-	//EEPROM
+	//EEPROM 
 	char R_array[15],W_array[15] = "DADOS";
 	eeprom_write_block(W_array,0,strlen(W_array)); // Escrever no endereço 0 do EEPROM
 
-	sei();
+	sei(); //HABILITA INTERRUPÇÕES
 	
 	while(1)
 	{
 	
-		Menu();	
-		OCR0A = (dutyCycle*255)/100.0;
+		Menu();	//DISPLAY
+		OCR0A = (dutyCycle*255)/100.0; //PWM
 	
 		// Registro de dados de solicitação no EEPROM
 		if(recebido = '1')
@@ -290,6 +299,7 @@ void main(void)
 	}
 }
 
+//ADC
 ISR(ADC_vect)
 {
 	OCR2B = ADC/4; //PWM
