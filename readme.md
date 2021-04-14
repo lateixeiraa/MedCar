@@ -6,10 +6,13 @@ O MedCar é um um robô móvel, que tem como objetivo princinpal fornecer suport
 
 <details>
  <summary><strong>Conteúdo</strong></summary>
-* Código em C
-* Documentação
-* Simulação
-* Video demonstrativo
+- Código em C
+
+- Documentação
+
+- Simulação
+
+- Video demonstrativo
 </details>
 
 <details>
@@ -19,4 +22,4 @@ Projeto desenvolvido para a disciplina de Laboratório de Arquitetura e Sistemas
 Desenvolvido por: Larissa Teixeira da Silva e Marina Oliveira Batista
 </details>
 
-MedCar - Link do repositório no gitHub ->  https://github.com/lateixeiraa/MedCar
+Repositório MedCar: https://github.com/lateixeiraa/MedCar
