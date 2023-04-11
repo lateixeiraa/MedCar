@@ -1,11 +1,8 @@
 
-<details>
- <summary><strong>Descrição</strong></summary>
-O MedCar é um um robô móvel, que tem como objetivo princinpal fornecer suporte em clínicas e pequenos hospitais, a partir de sua estrutura fisica. O corpo físico será adaptado para transportar objetos frequentemente utilizados na rotina médica.
-</details>
+# Medcar
+O MedCar é um um robô móvel, que tem como objetivo fornecer suporte em clínicas e pequenos hospitais, por meio de sua estrutura fisica, que será adaptado para transportar objetos frequentemente utilizados na rotina médica.
 
-<details>
- <summary><strong>Conteúdo</strong></summary>
+## Conteúdo
  
 - Código em C
 
@@ -14,13 +11,13 @@ O MedCar é um um robô móvel, que tem como objetivo princinpal fornecer suport
 - Simulação
 
 - Video demonstrativo
-</details>
 
-<details>
- <summary><strong>Sobre</strong></summary>
-Projeto desenvolvido para a disciplina de Laboratório de Arquitetura e Sistemas Digitais - 2020
+## Informações
+
+Projeto desenvolvido para a disciplina de Laboratório de Arquitetura e Sistemas Digitais
+
+Universidade Federal de Campina Grande - 2020
 
 Desenvolvido por: Larissa Teixeira da Silva e Marina Oliveira Batista
-</details>
 
 Repositório MedCar: https://github.com/lateixeiraa/MedCar
